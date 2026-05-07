@@ -3,126 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>高捷全路網手札</title>
+    <title>高捷手札回憶錄</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
         body { background-color: #fcfaf2; background-image: radial-gradient(#d1d1d1 1px, transparent 1px); background-size: 25px 25px; font-family: sans-serif; }
         .notebook-line { border-left: 2px dashed #ccc; margin-left: 20px; padding-left: 20px; position: relative; }
-        .station-node { transition: all 0.2s; cursor: pointer; position: relative; z-index: 10; }
-        /* 螢光筆標記效果 */
-        .checked { background: #ffeb3b !important; border: 2px solid #fbc02d !important; transform: rotate(-2deg) scale(1.1); box-shadow: 2px 2px 5px rgba(0,0,0,0.1); }
-        .checked::after { content: '★'; position: absolute; top: -10px; right: -10px; color: #f57f17; font-size: 14px; }
-        /* 便條紙彈窗 */
+        .station-item { transition: all 0.3s; }
+        .checked-dot { background: #ffeb3b !important; border: 2px solid #fbc02d !important; transform: rotate(-5deg); }
+        .photo-thumb { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; border: 2px solid #fff; box-shadow: 2px 2px 5px rgba(0,0,0,0.1); transform: rotate(3deg); }
         #memo-modal { display: none; }
-        .sticky-note { background: #fff9c4; transform: rotate(1deg); box-shadow: 5px 5px 15px rgba(0,0,0,0.1); }
-        .modal-open { display: flex !important; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .sticky-note { background: #fff9c4; box-shadow: 5px 5px 15px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body class="pb-32">
 
     <header class="p-8 pb-0">
-        <h1 class="text-3xl font-bold text-gray-800 underline decoration-red-400 decoration-4">高雄捷運路網手札</h1>
-        <p class="text-xs text-gray-400 mt-2 font-serif italic">My Kaohsiung Metro Diary 2026</p>
+        <h1 class="text-3xl font-bold text-gray-800 underline decoration-yellow-400 decoration-4">高捷回憶手札</h1>
+        <p class="text-[10px] text-gray-400 mt-2 font-bold tracking-widest uppercase">Travel Gallery 2026</p>
     </header>
 
-    <div class="p-6 space-y-10">
-        <section>
-            <h2 class="text-lg font-bold text-red-600 mb-4 flex items-center"><i class="bi bi-bookmark-fill mr-2"></i> 紅線 (Red Line)</h2>
-            <div class="notebook-line border-red-200" id="red-list"></div>
-        </section>
-
-        <section>
-            <h2 class="text-lg font-bold text-orange-500 mb-4 flex items-center"><i class="bi bi-bookmark-fill mr-2"></i> 橘線 (Orange Line)</h2>
-            <div class="notebook-line border-orange-200" id="orange-list"></div>
-        </section>
-
-        <section>
-            <h2 class="text-lg font-bold text-green-600 mb-4 flex items-center"><i class="bi bi-bookmark-fill mr-2"></i> 輕軌 (LRT)</h2>
-            <div class="notebook-line border-green-200" id="lrt-list"></div>
-        </section>
+    <div class="p-6 space-y-12">
+        <section><h2 class="text-lg font-black text-red-500 mb-6 underline">RED LINE</h2><div class="notebook-line" id="red-list"></div></section>
+        <section><h2 class="text-lg font-black text-orange-500 mb-6 underline">ORANGE LINE</h2><div class="notebook-line" id="orange-list"></div></section>
     </div>
 
-    <div id="memo-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm p-6">
-        <div class="sticky-note w-full max-w-sm p-8 rounded-sm relative">
-            <button onclick="closeModal()" class="absolute top-2 right-2 text-gray-400"><i class="bi bi-x-lg"></i></button>
-            <h3 id="m-title" class="text-xl font-bold border-b border-gray-400 pb-2 mb-4">站點名稱</h3>
-            <textarea id="m-note" rows="4" class="w-full bg-transparent border-none focus:ring-0 text-sm leading-7" placeholder="在這裡寫下旅行碎碎念..."></textarea>
-            <button onclick="save()" class="w-full mt-4 bg-gray-800 text-white py-2 rounded-sm font-bold text-sm">存入本子</button>
+    <div id="memo-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-6">
+        <div class="sticky-note w-full max-w-sm p-6 rounded-sm">
+            <h3 id="m-title" class="text-xl font-bold mb-4 border-b border-gray-400 pb-2">站點紀錄</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-500 mb-1">📸 上傳照片</label>
+                    <input type="file" id="m-file" accept="image/*" class="text-xs w-full">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-gray-500 mb-1">📝 心情筆記</label>
+                    <textarea id="m-note" rows="3" class="w-full bg-transparent border-b border-gray-300 focus:outline-none text-sm" placeholder="今天心情如何？"></textarea>
+                </div>
+            </div>
+            <div class="flex space-x-2 mt-6">
+                <button onclick="save()" class="flex-1 bg-gray-800 text-white py-2 rounded-sm font-bold text-xs">保存回憶</button>
+                <button onclick="closeModal()" class="px-4 py-2 border border-gray-300 text-xs">取消</button>
+            </div>
         </div>
     </div>
 
-    <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 px-8 py-3 bg-white/80 backdrop-blur-md rounded-full shadow-xl border border-white flex space-x-12 z-40">
-        <div class="text-center">
-            <div id="total" class="text-xl font-bold text-red-500">0</div>
-            <div class="text-[10px] text-gray-400 font-bold">已訪</div>
-        </div>
-        <button onclick="clearAll()" class="text-gray-300"><i class="bi bi-trash3-fill text-2xl"></i></button>
+    <nav class="fixed bottom-6 left-1/2 -translate-x-1/2 px-10 py-4 bg-white/90 rounded-full shadow-2xl flex items-center space-x-8 z-40">
+        <div class="text-center"><div id="total" class="text-xl font-black text-blue-600">0</div><div class="text-[8px] text-gray-400 font-bold uppercase">Visited</div></div>
+        <button onclick="clearAll()" class="text-gray-300"><i class="bi bi-eraser-fill text-2xl"></i></button>
     </nav>
 
     <script>
-        const RED = ["RK1 岡山車站", "R24 岡山高醫", "R23 橋頭火車站", "R22A 橋頭糖廠", "R22 青埔", "R21 都會公園", "R20 後勁", "R19 楠梓科技園區", "R18 油廠國小", "R17 世運", "R16 左營", "R15 生態園區", "R14 巨蛋", "R13 凹子底", "R12 後驛", "R11 高雄車站", "R10 美麗島", "R9 中央公園", "R8 三多商圈", "R7 獅甲", "R6 凱旋", "R5 前鎮高中", "R4A 草衙", "R4 高雄國際機場", "R3 小港"];
-        const ORANGE = ["O1 哈瑪星", "O2 鹽埕埔", "O4 市議會", "O5 美麗島", "O7 文化中心", "O8 五塊厝", "O9 技擊館", "O10 衛武營", "O11 鳳山西站", "O12 鳳山", "O13 大東", "O14 鳳山國中", "OT1 大寮"];
-        const LRT = ["C1 籬仔內", "C2 凱旋瑞田", "C3 前鎮之星", "C4 凱旋中華", "C5 夢時代", "C6 經貿園區", "C7 軟體園區", "C8 高雄展覽館", "C9 旅運中心", "C10 光榮碼頭", "C11 真愛碼頭", "C12 駁二大義", "C13 駁二蓬萊", "C14 哈瑪星", "C15 壽山公園", "C16 文武聖殿", "C17 鼓山區公所", "C18 鼓山", "C19 馬卡道", "C20 臺鐵美術館", "C21 美術館", "C22 聯合醫院", "C23 龍華國小", "C24 愛河之心", "C25 新上國小", "C26 灣仔內", "C27 鼎山街", "C28 高雄高工", "C29 樹德家商", "C30 科工館", "C31 聖功醫院", "C32 凱旋公園", "C33 衛生局", "C34 五權國小", "C35 凱旋武昌", "C36 凱旋二聖", "C37 輕軌機廠"];
-
-        let db = JSON.parse(localStorage.getItem('k_metro_notes') || '{}');
+        const RED = ["R16 左營", "R14 巨蛋", "R10 美麗島", "R8 三多商圈", "R3 小港"]; // 示範站點，可自行補齊
+        const ORANGE = ["O1 哈瑪星", "O5 美麗島", "O13 大東"];
+        let db = JSON.parse(localStorage.getItem('k_metro_v3') || '{}');
         let curId = null;
 
         function build() {
-            gen('red-list', RED, 'bg-red-500');
-            gen('orange-list', ORANGE, 'bg-orange-500');
-            gen('lrt-list', LRT, 'bg-green-600');
-            refresh();
+            gen('red-list', RED); gen('orange-list', ORANGE); refresh();
         }
 
-        function gen(container, data, color) {
+        function gen(container, data) {
             const box = document.getElementById(container);
             data.forEach(s => {
-                const id = s.split(' ')[0];
-                const name = s.split(' ')[1];
+                const [id, name] = s.split(' ');
                 const item = document.createElement('div');
-                item.className = "flex items-center mb-6 last:mb-0";
+                item.className = "flex items-center mb-8 station-item";
                 item.innerHTML = `
-                    <div id="dot-${id}" onclick="openNote('${id}', '${name}')" 
-                         class="station-node w-10 h-10 rounded-full bg-white border-2 border-gray-200 flex items-center justify-center text-[10px] font-bold shadow-sm mr-4">
-                        ${id}
+                    <div id="dot-${id}" onclick="openNote('${id}', '${name}')" class="w-10 h-10 rounded-full bg-white border-2 border-gray-200 flex-shrink-0 flex items-center justify-center text-[10px] font-bold z-10 shadow-sm mr-4">${id}</div>
+                    <div class="flex flex-col flex-1">
+                        <span class="text-sm font-bold text-gray-700">${name}</span>
+                        <div id="note-${id}" class="text-[10px] text-gray-400 italic mt-1"></div>
                     </div>
-                    <span class="text-sm font-bold text-gray-600">${name}</span>
+                    <div id="img-${id}"></div>
                 `;
                 box.appendChild(item);
             });
         }
 
         function openNote(id, name) {
-            curId = id;
-            document.getElementById('m-title').innerText = name;
-            document.getElementById('m-note').value = db[id] || '';
+            curId = id; document.getElementById('m-title').innerText = name;
+            document.getElementById('m-note').value = db[id]?.note || '';
             document.getElementById('memo-modal').classList.add('modal-open');
         }
 
         function closeModal() { document.getElementById('memo-modal').classList.remove('modal-open'); }
 
-        function save() {
-            const txt = document.getElementById('m-note').value;
-            if(txt.trim()) db[curId] = txt;
-            else delete db[curId];
-            localStorage.setItem('k_metro_notes', JSON.stringify(db));
-            closeModal();
-            refresh();
+        async function save() {
+            const note = document.getElementById('m-note').value;
+            const file = document.getElementById('m-file').files[0];
+            let imgData = db[curId]?.img || null;
+
+            if (file) {
+                imgData = await compressImage(file);
+            }
+
+            db[curId] = { note, img: imgData };
+            localStorage.setItem('k_metro_v3', JSON.stringify(db));
+            closeModal(); refresh();
+        }
+
+        function compressImage(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_SIZE = 120; // 縮圖尺寸
+                        let w = img.width, h = img.height;
+                        if (w > h) { if (w > MAX_SIZE) { h *= MAX_SIZE / w; w = MAX_SIZE; } }
+                        else { if (h > MAX_SIZE) { w *= MAX_SIZE / h; h = MAX_SIZE; } }
+                        canvas.width = w; canvas.height = h;
+                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL('image/jpeg', 0.7));
+                    };
+                };
+            });
         }
 
         function refresh() {
-            document.querySelectorAll('.station-node').forEach(n => n.classList.remove('checked'));
             Object.keys(db).forEach(id => {
-                const el = document.getElementById('dot-' + id);
-                if(el) el.classList.add('checked');
+                const dot = document.getElementById('dot-' + id);
+                const noteEl = document.getElementById('note-' + id);
+                const imgEl = document.getElementById('img-' + id);
+                if (dot) dot.classList.add('checked-dot');
+                if (noteEl) noteEl.innerText = db[id].note || '';
+                if (imgEl && db[id].img) imgEl.innerHTML = `<img src="${db[id].img}" class="photo-thumb">`;
             });
             document.getElementById('total').innerText = Object.keys(db).length;
         }
 
-        function clearAll() { if(confirm('要燒掉整本手札嗎？紀錄會歸零喔！')) { db = {}; localStorage.clear(); refresh(); } }
-
+        function clearAll() { if(confirm('要清空手札嗎？')) { db = {}; localStorage.clear(); location.reload(); } }
         build();
     </script>
 </body>
