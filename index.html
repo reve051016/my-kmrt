@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>高捷手札</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        /* 筆記本網格背景 */
+        body { 
+            background-color: #f4f1ea;
+            background-image: radial-gradient(#d1d1d1 1px, transparent 1px);
+            background-size: 20px 20px;
+            font-family: "PingFang TC", "Microsoft JhengHei", sans-serif;
+        }
+        
+        .notebook-page {
+            background: #fff;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.05);
+            border-left: 5px solid #e5e7eb;
+            position: relative;
+        }
+
+        /* 膠帶效果 */
+        .washi-tape {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 30px;
+            background: rgba(147, 197, 253, 0.5);
+            backdrop-filter: blur(2px);
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
+            z-index: 20;
+        }
+
+        .station-dot {
+            transition: all 0.3s;
+            cursor: pointer;
+            border: 2px dashed #999;
+        }
+
+        .visited-active {
+            background: #ffcf33 !important; /* 像螢光筆標記 */
+            border: 2px solid #eab308 !important;
+            transform: rotate(-3deg);
+        }
+
+        /* 彈窗：便條紙風格 */
+        #record-modal { display: none; }
+        .sticky-note {
+            background: #fff9c4;
+            box-shadow: 10px 10px 20px rgba(0,0,0,0.1);
+            transform: rotate(1deg);
+        }
+
+        .modal-open { display: flex !important; animation: popIn 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
+        @keyframes popIn { from { opacity: 0; scale: 0.5; } to { opacity: 1; scale: 1; } }
+    </style>
+</head>
+<body class="pb-32">
+
+    <header class="p-8 pb-4">
+        <h1 class="text-3xl font-bold text-gray-700 underline decoration-yellow-400 decoration-4">高捷出遊手札</h1>
+        <p class="text-sm text-gray-400 mt-2 italic font-serif">Traveling in Kaohsiung, 2026</p>
+    </header>
+
+    <div class="px-6 space-y-8">
+        <div class="notebook-page rounded-lg p-6">
+            <div class="washi-tape" style="background: rgba(248, 113, 113, 0.4);"></div>
+            <h3 class="font-bold text-red-500 mb-6 flex items-center border-b-2 border-red-100 pb-2">
+                <i class="bi bi-pin-angle-fill mr-2"></i> 紅線重點站
+            </h3>
+            <div class="grid grid-cols-3 gap-6" id="red-nodes">
+                </div>
+        </div>
+
+        <div class="notebook-page rounded-lg p-6">
+            <div class="washi-tape" style="background: rgba(251, 191, 36, 0.4);"></div>
+            <h3 class="font-bold text-orange-500 mb-6 flex items-center border-b-2 border-orange-100 pb-2">
+                <i class="bi bi-pin-angle-fill mr-2"></i> 橘線重點站
+            </h3>
+            <div class="grid grid-cols-3 gap-6" id="orange-nodes"></div>
+        </div>
+    </div>
+
+    <div id="record-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm p-6">
+        <div class="sticky-note w-full max-w-sm rounded-lg p-8 relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-2">
+                <button onclick="closeModal()" class="text-gray-400"><i class="bi bi-x-lg"></i></button>
+            </div>
+            
+            <h3 id="modal-title" class="text-2xl font-bold text-gray-800 mb-6 border-b border-dashed border-gray-400">美麗島</h3>
+            
+            <div class="space-y-6">
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 mb-2">📸 紀錄照片</label>
+                    <input type="file" id="photo" class="text-xs w-full">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-400 mb-2">📝 隨手記</label>
+                    <textarea id="note-input" rows="4" class="w-full bg-transparent border-b border-gray-300 focus:outline-none text-sm leading-8" placeholder="寫下這站的故事..."></textarea>
+                </div>
+            </div>
+
+            <button onclick="saveRecord()" class="mt-8 w-full bg-blue-500 text-white py-3 rounded shadow hover:bg-blue-600 font-bold transition-all">
+                寫入日記
+            </button>
+        </div>
+    </div>
+
+    <nav class="fixed bottom-0 left-0 right-0 h-20 bg-white border-t border-gray-100 flex justify-around items-center px-10 z-40">
+        <button onclick="location.reload()" class="flex flex-col items-center text-blue-500">
+            <i class="bi bi-house-heart-fill text-2xl"></i>
+            <span class="text-[10px] mt-1 font-bold">手札頁</span>
+        </button>
+        <button onclick="alert('日記本功能整理中！')" class="flex flex-col items-center text-gray-300">
+            <i class="bi bi-book-fill text-2xl"></i>
+            <span class="text-[10px] mt-1 font-bold">舊回憶</span>
+        </button>
+    </nav>
+
+    <script>
+        const STATIONS = {
+            red: ["R24 岡山", "R16 左營", "R14 巨蛋", "R10 美麗島", "R8 三多", "R3 小港"],
+            orange: ["O1 哈瑪星", "O5 美麗島", "O13 大東"]
+        };
+
+        let db = JSON.parse(localStorage.getItem('kmrt_journal') || '{}');
+        let currentEditingId = null;
+
+        function init() {
+            render('red-nodes', STATIONS.red);
+            render('orange-nodes', STATIONS.orange);
+            updateUI();
+        }
+
+        function render(id, list) {
+            const container = document.getElementById(id);
+            list.forEach(name => {
+                const sid = name.split(' ')[0];
+                const sname = name.split(' ')[1];
+                const div = document.createElement('div');
+                div.className = "flex flex-col items-center space-y-2";
+                div.innerHTML = `
+                    <div id="${sid}" onclick="openRecord('${sid}', '${sname}')" 
+                         class="station-dot w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center font-black text-xs text-gray-400">
+                        ${sid}
+                    </div>
+                    <span class="text-[10px] font-bold text-gray-600">${sname}</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function openRecord(id, name) {
+            currentEditingId = id;
+            document.getElementById('modal-title').innerText = name;
+            document.getElementById('note-input').value = db[id]?.note || '';
+            document.getElementById('record-modal').classList.add('modal-open');
+        }
+
+        function closeModal() {
+            document.getElementById('record-modal').classList.remove('modal-open');
+        }
+
+        function saveRecord() {
+            db[currentEditingId] = { 
+                note: document.getElementById('note-input').value,
+                date: new Date().toLocaleDateString()
+            };
+            localStorage.setItem('kmrt_journal', JSON.stringify(db));
+            closeModal();
+            updateUI();
+        }
+
+        function updateUI() {
+            Object.keys(db).forEach(id => {
+                const el = document.getElementById(id);
+                if(el) {
+                    el.classList.add('visited-active');
+                    el.innerHTML = '<i class="bi bi-star-fill text-yellow-600 text-xl"></i>';
+                }
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>
